@@ -1,0 +1,183 @@
+getwd()
+setwd("C:/Users/kitcoop/dacon")
+install.packages('ggplot2')
+install.packages('tidyverse')
+install.packages("sos")
+install.packages('rms')
+install.packages("arules")
+
+library(ggplot2)
+library(tidyverse)
+library(sos)
+library(rms)
+library(arules)
+
+train = read.csv('train_set.csv')
+test = read.csv('test_set.csv')
+submission
+submission_1 = read.csv('sample_submission.csv', row.names = 'id')
+submission_2 = read.csv('sample_submission.csv')
+submission_1
+#findFn('interpolation')
+s_train = head(train)
+s_test = head(test)
+str(train)
+summary(train)
+
+# dst_columns = train[str_detect(colnames(train),'_dst$')]
+# src_columns = train[str_detect(colnames(train),'_src$')]
+# 
+# 
+# dst_columns = s_train[str_detect(colnames(s_train),'_dst$')]
+# src_columns = s_train[str_detect(colnames(s_train),'_src$')]
+# 
+# split(dst_columns,src_columns)
+# 
+# length(train$rho[train$rho==10])
+# length(train$rho[train$rho==15])
+# length(train$rho[train$rho==20])
+# length(train$rho[train$rho==25])
+
+######## submission #####
+##hhb
+names(train[1:73])  # 
+train_set = train[1:73]
+lm( hhb ~ ,data = train_set)
+
+library(dplyr)
+new.proc <- train_set %>% 
+  select(hhb)
+
+check <- train_set %>%
+  select(!hhb)
+class(hhb)
+
+m1 = lm(hhb ~ ., data = train_set)
+submission$hhb<- print(fitted(m))
+submission$hhb
+
+# hbo2
+train2 = train[1:74]
+train2$hhb<-NULL
+
+hbo2 <- train2 %>%
+  select(hbo2)
+train2_sey <- train2 %>%
+  select(!hbo2)
+m2 = lm(hbo2 ~ ., data = train2)
+submission$hbo2<- fitted(m)
+
+# ca
+train3 <- train[1:75]
+names(train3) 
+train3$hhb <- NULL ; train3$hbo2 <- NULL
+ca <- train3 %>%
+  select(ca)
+train3_Set <- train3 %>%
+  select(!ca)
+m3 = lm(ca ~., data = train3)
+submission$ca<- fitted(m3)
+
+# na
+train4 <- train[1:72]
+train4['na'] <-train$na
+m4 = lm(na ~., data = train4)
+submission$na<- fitted(m4)
+
+summary(m1)
+summary(m4)
+
+predict(fit, newdata = train4$na)
+predict(m4, train_set)
+
+
+#
+
+#####xgboost
+library(xgboost)
+x = train %>% select(-hhb,hbo2,na,ca) %>% data.matrix
+y1 = train$hhb 
+y2 = train$hbo2
+y3 = train$ca
+y4 = train$na
+
+# y1 °ª Æ©´×
+summary(y1)
+y1_1<- as.integer(y1)
+levels(y1_1)
+
+
+
+cv_model1 = xgb.cv(data = x, label = as.numeric(y1_1)-1, num_class = levels(y1_1) %>% length,
+                   nfold = 5, nrounds = 1000, early_stopping_rounds = 200, 
+                   objective = "multi:softmax", eval_metric = 'mae', verbose = F, prediction = T)
+
+attributes(cv_model1)
+cv_model1
+cv_model1$evaluation_log
+
+submission_2$hhb<- cv_model1$pred
+train$hhb - submission_2$hhb
+
+# y2 °ª Æ©´×
+summary(y2)
+y2_1<- as.integer(y2)
+levels(y2_1)
+
+submission_2
+
+cv_model2 = xgb.cv(data = x, label = as.numeric(y2_1)-1, num_class = levels(y2_1) %>% length,
+                   nfold = 5, nrounds = 1000, early_stopping_rounds = 200, 
+                   objective = "reg:linear", eval_metric = 'mae', verbose = F, prediction = T)
+
+attributes(cv_model2)
+cv_model2
+cv_model2$evaluation_log
+
+submission_2$hbo2<- cv_model2$pred
+
+# y3 °ª Æ©´×
+summary(y1)
+y3_1<- as.integer(y3)
+levels(y3_1)
+
+
+
+cv_model3 = xgb.cv(data = x, label = as.numeric(y3_1)-1, num_class = levels(y3_1) %>% length,
+                   nfold = 5, nrounds = 1000, early_stopping_rounds = 200, 
+                   objective = "reg:linear", eval_metric = 'mae', verbose = F, prediction = T)
+
+attributes(cv_model3)
+cv_model3
+cv_model3$evaluation_log
+
+submission_2$ca<- cv_model3$pred
+# y4 °ª Æ©´×
+summary(y4)
+y4_1<- as.integer(y4)
+levels(y4_1)
+
+
+
+cv_model4 = xgb.cv(data = x, label = as.numeric(y4_1)-1, num_class = levels(y4_1) %>% length,
+                   nfold = 5, nrounds = 1000, early_stopping_rounds = 200, 
+                   objective = "reg:linear", eval_metric = 'mae', verbose = F, prediction = T)
+
+attributes(cv_model4)
+cv_model4
+cv_model4$evaluation_log
+
+submission_2$na<- cv_model4$pred
+
+# score
+help('write.csv')
+submission_2
+write.csv(submission_2,'xgb_sample.csv', row.names = FALSE)
+names(submission_2)
+sample = read.csv('sample.csv')
+names(sample)
+table()
+
+boxplot(train$)
+
+rm(list=ls())
