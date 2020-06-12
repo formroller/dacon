@@ -1,0 +1,83 @@
+# https://machinelearningmastery.com/multi-output-regression-models-with-python/
+# MultiOutputRegressor (conferences)
+
+import os 
+import pandas as pd
+import numpy as np
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.multioutput import MultiOutputRegressor
+import sklearn.metrics 
+from  sklearn.metrics import mean_absolute_error
+
+import tensorflow as tf
+import keras
+
+
+from bayes_opt import BayesianOptimization  # pip install bayesian-optimization
+import xgboost as xgb
+from xgboost import XGBRegressor, XGBClassifier
+from xgboost import plot_importance
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+import sklearn
+
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
+
+#  데이터 로딩 
+os.getcwd()
+os.chdir('.\dacon')
+train = pd.read_csv('train.csv', index_col = 'id')
+test = pd.read_csv('test.csv', index_col = 'id')
+sub = pd.read_csv('sample_submission.csv', index_col = 'id')
+
+# 데이터 보간
+train = train.interpolate(method = 'linear', axis = 1)
+test = test.interpolate(method = 'linear', axis = 1)
+
+## 데이터 하나씩만 예측  hhb
+X = train.iloc[:,:71]
+y = train.iloc[:,71]
+
+data_dmatrix = xgb.DMatrix(data = X, label = y)
+model = XGBClassifier()
+dtrain = xgb.DMatrix(train, label = train['hhb'])
+
+params = {
+    'booster': 'gblinear',
+    'objective': 'multi:softmax',
+    'eval_metric': 'merror',
+    'eta' : 0.02,
+    'lambda': 2.0,
+    'alpha': 1.0,
+    'lambda_bias': 6.0,
+    'num_class': 5,
+    'n_jobs' : 4,
+    'silent': 1,
+}
+
+
+Xtrain, Xtest, Ytrain, Ytest = train_test_split(train.iloc[:,:71],train.iloc[:,71], random_state = 12345)
+
+xg_reg = xgb.XGBRFRegressor(n_estimators = 2500 , random_state = 0 , max_depth = 27)
+xg_reg.fit(Xtrain, Ytrain)
+# predict
+preds = xg_reg.predict(Xtest)
+
+mae = np.sqrt(mean_absolute_error((Ytest, preds)))
+rmse = np.sqrt(mean_absolute_error(Ytest,preds))
+
+print("RMSE: %f" % (rmse))
+
+# k-fold 검증
+params = {"objective":"reg:linear",'colsample_bytree': 0.3,'learning_rate': 0.1,
+                'max_depth': 5, 'alpha': 10}
+
+cv_results = xgb.cv(dtrain=data_dmatrix, params=params, nfold=3,
+                    num_boost_round=100,early_stopping_rounds=10,metrics="mae", as_pandas=True, seed=123)
+
+print((cv_results["test-mae-mean"]).tail(1))  # final boosting round  1.027438
+xgb.plot_importance(xg_reg) # feature importace plot
