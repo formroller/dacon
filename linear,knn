@@ -1,0 +1,141 @@
+# https://machinelearningmastery.com/multi-output-regression-models-with-python/
+#  multioutput basic model
+import os
+import pandas as pd
+import numpy as np
+
+
+from sklearn.model_selection import train_test_split
+
+# scale
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+
+# 모델 선택
+import sklearn
+from sklearn.linear_model import LinearRegression as lr
+from sklearn.neighbors import KNeighborsRegressor as knn_R
+from sklearn.preprocessing import 
+
+# 선형회귀모형 적합
+import statsmodels.api as sm
+
+# 측정값
+from sklearn.metrics import mean_absolute_error as mae
+
+# 시각화
+import matplotlib.pyplot as plt
+import mglearn
+
+os.chdir('..\dacon')
+print(sklearn.__version__)
+
+train = pd.read_csv('train.csv', index_col = 'id')
+test = pd.read_csv('test.csv')
+test2 = pd.read_csv('test.csv', index_col = 'id')
+sub = pd.read_csv('sample_submission.csv')
+sub2 = pd.read_csv('sample_submission.csv', index_col = 'id', na_values=0)
+pd.read_csv??
+
+test_set = pd.merge(test,sub)
+test_set = test_set.set_index('id')  # 최종 test set
+
+# 원자료 분리
+X = train.iloc[:,:71]
+y = train.iloc[:,71:]
+
+X = X.interpolate(method = 'linear', axis = 1)  # 데이터 보간
+test2 = test2.interpolate(method = 'linear', axis = 1)
+
+# =============================================================================
+# linear regression
+# =============================================================================
+# case1) train / test data 바로 결합 
+model = lr()
+model.fit(X, test2)  # X- target값 뺀 변수, test2 - target값 없는 set
+
+model.predict(sub)
+#  => predict 불가 
+
+# case2) 
+ # - train -> X(feature) , y(target)분리 
+ # - 학습(fit)후 test_set (test2) y값 예측
+model.fit(X, y)
+yhat= model.predict(test2)
+
+mae(y,yhat)   # 1.8128655253306662
+                
+# 선형회귀모형 적합
+lin_reg = sm.OLS(X,test2).fit()
+lin_reg.summary()
+
+X.shape
+y.shape
+test2.shape
+sub2.shape
+
+print(f'''X shape : {X.shape}, 
+          y shape : {y.shape},
+          test2 shape : {test2.shape},
+          sub2 shape : {sub2.shape}''')
+          
+## linear regression after scale
+
+def scale_data(X, scaler = None):
+    if not scaler :
+        scaler = MinMaxScaler(feature_range = (-1,1))
+        scaler.fit(X),
+    X = scaler.transform(X)   
+    return X, scaler
+          
+X = scale_data(X)
+test2 = scale_data(test2)
+
+# StandardScaler(X)
+scaled = StandardScaler()
+scaled.fit(X)
+X_1 = scaled.transform(X)
+test2_1 = scaled.transform(test2)
+
+scale_data(X, StandardScaler)
+
+model.fit(X_1,y)
+yhat2 = model.predict(test2_1)
+
+mae(y, yhat2)  # 1.8128655253306656
+
+# => sacle이후 변화 없음.
+
+# =============================================================================
+# knn
+# =============================================================================
+from sklearn.neighbors import KNeighborsRegressor as knn
+
+X = train.iloc[:,:71]
+y = train.iloc[:,71:]
+
+X = X.interpolate(method = 'linear', axis = 1)  # 데이터 보간
+test2 = test2.interpolate(method = 'linear', axis = 1)
+
+# case1) n_neighbors = 3, 2.0420145833333376
+
+m_knn = knn(n_neighbors = 10)
+m_knn.fit(X,y)
+k_hat = m_knn.predict(test2)
+
+mae(y, k_hat)  # 2.0420145833333376
+
+# case2) n_neighbors tunning
+mae_score = []; k_hat = []; count_i = []
+
+for i in np.arange(1,30):
+    m_knn = knn(n_neighbors = i)
+    count_i.append(i)
+    m_knn.fit(X,y)
+    k_hat = m_knn.predict(test2)
+    mae_score.append(mae(y,k_hat))
+    
+plt.plot(mae_score)
+plt.legend()
+mae_score = pd.DataFrame({'i':count_i, 'mas_score':mae_score})
+mae_score.sort_values(by=mae_score, ascending = False)
