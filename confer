@@ -13,6 +13,9 @@
 # Non-invasive NIR spectroscopy of human brain function during exercise.
 # Optical windows for head tissues in near‐infrared and short‐wave infrared regions: Approaching transcranial light applications.
 
+# [R] 데이터 종류에 따른 분석 기
+# https://rpubs.com/jmhome/datatype_analysis
+
 # 모델 분할
 from sklearn.model_selection import train_test_split
 
