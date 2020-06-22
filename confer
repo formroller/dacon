@@ -43,6 +43,13 @@ from sklearn.metrics import r2_score  # 결정계수
 # 상태 bar
 from tqdm import tqdm
 
+# 시각화
+# https://zzsza.github.io/development/2018/08/24/data-visualization-in-python/
 
 ###### 
-src 컬럼 제거
+# 변수 중요도 계산 in python
+https://machinelearningmastery.com/calculate-feature-importance-with-python/
+https://wikidocs.net/16882
+
+# feature selection
+https://subinium.github.io/feature-selection/
