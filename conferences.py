@@ -10,6 +10,8 @@
 # RandomForest parameter description
 # https://woolulu.tistory.com/28
 
+# 측정지표
+# chukycheese.github.io/translation/statistics/absolute-error-and-mean-absolute-error/
 
 # 국내 논문
 # http://www.riss.or.kr/index.do
